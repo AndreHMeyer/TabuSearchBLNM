@@ -32,9 +32,9 @@ namespace TabuSearchBLNM
 
                     for (int rep = 1; rep <= repeticoes; rep++)
                     {
-                        var valoresAlphaAjustados = valoresAlpha.Concat(new double[] { random.NextDouble() * 0.09 + 0.01 }).ToArray();
+                        var alphas = valoresAlpha.Concat(new double[] { random.NextDouble() * 0.09 + 0.01 }).ToArray();
 
-                        foreach (double alpha in valoresAlphaAjustados)
+                        foreach (double alpha in alphas)
                         {
                             int tabuSize = (int)(alpha * tarefas);
                             var stopwatch = Stopwatch.StartNew();
@@ -47,7 +47,7 @@ namespace TabuSearchBLNM
                 }
             }
 
-            File.WriteAllText(@"C:\\Users\\AndréMeyer\\Downloads\\BuscaTabuBLNM.csv", log.ToString(), Encoding.UTF8);
+            File.WriteAllText(@"", log.ToString(), Encoding.UTF8);
         }
 
         private List<int> GerarTempoTarefas(int tarefas)
@@ -57,7 +57,7 @@ namespace TabuSearchBLNM
 
         private (BuscaTabu, int) ExecutarBuscaTabu(int tarefas, int maquina, List<int> tempoTarefas, int tabuSize)
         {
-            int iteracoesSemMelhora = 0, maxIteracoesSemMelhora = 1000, iteracoesEstagnadas = 200, iteracoesExecutadas = 0;
+            int iteracoesSemMelhora = 0, maxIteracoesSemMelhora = 1000, iteracoesEstagnadas = 50, iteracoesExecutadas = 0;
             Queue<(int, int)> listaTabu = new Queue<(int, int)>();
 
             var melhorSolucao = GerarDistribuicaoInicial(tarefas, maquina, tempoTarefas);
