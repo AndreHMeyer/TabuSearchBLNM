@@ -44,7 +44,7 @@ namespace TabuSearchBLNM
                 }
             }
 
-            File.WriteAllText(@"C:\Users\AndréMeyer\Downloads\BuscaTabu500.csv", log.ToString(), Encoding.UTF8);
+            File.WriteAllText(@"", log.ToString(), Encoding.UTF8);
         }
 
         private List<int> GerarTempoTarefas(int tarefas)
