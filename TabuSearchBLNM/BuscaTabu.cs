@@ -27,27 +27,24 @@ namespace TabuSearchBLNM
             {
                 foreach (var fatorR in fatoresR)
                 {
-                    int tarefas = (int)(maquina * fatorR);
+                    int tarefas = (int)Math.Pow(maquina, fatorR);
                     var tempoTarefas = GerarTempoTarefas(tarefas);
 
                     for (int rep = 1; rep <= repeticoes; rep++)
                     {
                         var alphas = valoresAlpha.Concat(new double[] { random.NextDouble() * 0.09 + 0.01 }).ToArray();
 
-                        foreach (double alpha in alphas)
-                        {
-                            int tabuSize = (int)(alpha * tarefas);
-                            var stopwatch = Stopwatch.StartNew();
-                            var (melhorSolucao, iteracoesExecutadas) = ExecutarBuscaTabu(tarefas, maquina, tempoTarefas, tabuSize);
-                            stopwatch.Stop();
+                        int tabuSize = (int)(alphas[rep - 1] * tarefas);
+                        var stopwatch = Stopwatch.StartNew();
+                        var (melhorSolucao, iteracoesExecutadas) = ExecutarBuscaTabu(tarefas, maquina, tempoTarefas, tabuSize);
+                        stopwatch.Stop();
 
-                            log.AppendLine($"buscatabu;{tarefas};{maquina};{rep};{stopwatch.Elapsed.TotalSeconds:F2};{iteracoesExecutadas};{melhorSolucao.makespan};{alpha:F2}");
-                        }
+                        log.AppendLine($"buscatabu;{tarefas};{maquina};{rep};{stopwatch.Elapsed.TotalSeconds:F2};{iteracoesExecutadas};{melhorSolucao.makespan};{alphas[rep - 1]:F2}");
                     }
                 }
             }
 
-            File.WriteAllText(@"", log.ToString(), Encoding.UTF8);
+            File.WriteAllText(@"C:\Users\AndréMeyer\Downloads\BuscaTabu500.csv", log.ToString(), Encoding.UTF8);
         }
 
         private List<int> GerarTempoTarefas(int tarefas)
@@ -57,7 +54,7 @@ namespace TabuSearchBLNM
 
         private (BuscaTabu, int) ExecutarBuscaTabu(int tarefas, int maquina, List<int> tempoTarefas, int tabuSize)
         {
-            int iteracoesSemMelhora = 0, maxIteracoesSemMelhora = 1000, iteracoesEstagnadas = 50, iteracoesExecutadas = 0;
+            int iteracoesSemMelhora = 0, maxIteracoesSemMelhora = 1000, iteracoesExecutadas = 0, iteracoesRelizadas = 0;
             Queue<(int, int)> listaTabu = new Queue<(int, int)>();
 
             var melhorSolucao = GerarDistribuicaoInicial(tarefas, maquina, tempoTarefas);
@@ -71,35 +68,47 @@ namespace TabuSearchBLNM
                 if (melhorVizinho == null) break;
 
                 solucaoAtual = melhorVizinho;
+
+                double novoAlpha = random.NextDouble() * 0.09 + 0.01;
+                tabuSize = (int)(novoAlpha * tarefas);
+
                 listaTabu.Enqueue(melhorMovimento);
                 if (listaTabu.Count > tabuSize) listaTabu.Dequeue();
 
                 if (solucaoAtual.makespan < melhorSolucao.makespan)
                 {
+                    iteracoesRelizadas++;
+
                     melhorSolucao = solucaoAtual;
                     iteracoesSemMelhora = 0;
                 }
                 else
                 {
                     iteracoesSemMelhora++;
-                    if (iteracoesSemMelhora >= iteracoesEstagnadas) break;
                 }
             }
-            return (melhorSolucao, iteracoesExecutadas);
+
+            return (melhorSolucao, iteracoesRelizadas);
         }
 
         private BuscaTabu GerarDistribuicaoInicial(int tarefas, int maquinas, List<int> tempoTarefas)
         {
-            List<List<int>> alocacaoMaquinas = Enumerable.Range(0, maquinas).Select(_ => new List<int>()).ToList();
+            List<List<(int tarefa, int tempo)>> alocacaoMaquinas = Enumerable.Range(0, maquinas).Select(_ => new List<(int, int)>()).ToList();
+
             var tarefasOrdenadas = Enumerable.Range(0, tarefas).OrderByDescending(t => tempoTarefas[t]).ToList();
 
             foreach (int tarefa in tarefasOrdenadas)
             {
                 int indiceAleatorio = random.Next(maquinas);
-                alocacaoMaquinas[indiceAleatorio].Add(tarefa);
+                alocacaoMaquinas[indiceAleatorio].Add((tarefa, tempoTarefas[tarefa]));
             }
-            return new BuscaTabu { maquinas = alocacaoMaquinas, makespan = CalcularMakespan(alocacaoMaquinas, tempoTarefas) };
+
+            // Filtra apenas com índices das tarefas
+            var maquinasApenasTarefas = alocacaoMaquinas.Select(lista => lista.Select(x => x.tarefa).ToList()).ToList();
+
+            return new BuscaTabu { maquinas = maquinasApenasTarefas, makespan = CalcularMakespan(maquinasApenasTarefas, tempoTarefas) };
         }
+
 
         private (BuscaTabu, (int, int)) GerarMelhorVizinho(BuscaTabu solucaoAtual, List<int> tempoTarefas, int m, Queue<(int, int)> listaTabu)
         {
